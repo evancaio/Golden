@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 
 export default function Page() {
   const [status, setStatus] = useState<string | null>(null)
+  const [cpf, setCpf] = useState('')
+  const [telefone, setTelefone] = useState('')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -13,6 +15,13 @@ export default function Page() {
     for (const k of required) {
       if (!fd.get(k)) { setStatus('Preencha todos os campos obrigatórios'); return }
     }
+
+    // basic client-side validation for cpf/telefone
+    const cpfDigits = String(fd.get('cpf') || '').replace(/\D/g, '')
+    if (cpfDigits.length !== 11) { setStatus('CPF inválido'); return }
+
+    const telefoneDigits = String(fd.get('telefone') || '').replace(/\D/g, '')
+    if (telefoneDigits.length < 10) { setStatus('Telefone inválido'); return }
 
     const foto = fd.get('foto') as File | null
     if (foto && foto.size > 0) {
@@ -49,11 +58,11 @@ export default function Page() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium">CPF</label>
-            <input name="cpf" placeholder="000.000.000-00" className="mt-1 w-full rounded border p-2" />
+              <input name="cpf" value={cpf} onChange={e => { const v = formatCPF(e.target.value); setCpf(v) }} placeholder="000.000.000-00" className="mt-1 w-full rounded border p-2" />
           </div>
           <div>
             <label className="block text-sm font-medium">Telefone</label>
-            <input name="telefone" placeholder="(00) 00000-0000" className="mt-1 w-full rounded border p-2" />
+              <input name="telefone" value={telefone} onChange={e => { const v = formatPhone(e.target.value); setTelefone(v) }} placeholder="(00) 00000-0000" className="mt-1 w-full rounded border p-2" />
           </div>
         </div>
 
@@ -79,7 +88,7 @@ export default function Page() {
 
         <div>
           <label className="block text-sm font-medium">Upload de foto (JPG/PNG)</label>
-          <input name="foto" type="file" accept="image/*" className="mt-1 w-full" />
+          <input name="foto" type="file" accept="image/jpeg,image/png" className="mt-1 w-full" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -109,4 +118,25 @@ function fileToDataUrl(file: File) {
     fr.onerror = reject
     fr.readAsDataURL(file)
   })
+}
+
+function formatCPF(v: string){
+  const d = v.replace(/\D/g,'').slice(0,11)
+  const parts = []
+  parts.push(d.slice(0,3))
+  if (d.length > 3) parts.push(d.slice(3,6))
+  if (d.length > 6) parts.push(d.slice(6,9))
+  if (d.length > 9) parts.push(d.slice(9,11))
+  if (parts.length <= 1) return parts[0] || ''
+  if (parts.length === 2) return `${parts[0]}.${parts[1]}`
+  if (parts.length === 3) return `${parts[0]}.${parts[1]}.${parts[2]}`
+  return `${parts[0]}.${parts[1]}.${parts[2]}-${parts[3]}`
+}
+
+function formatPhone(v: string){
+  const d = v.replace(/\D/g,'').slice(0,11)
+  if (d.length <= 2) return d
+  if (d.length <= 6) return `(${d.slice(0,2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`
 }
