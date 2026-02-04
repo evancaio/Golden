@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cadastro de Prestadores — Preview</title>
+  <style>
+    /* Minimal mobile-first styles inspired by Tailwind */
+    :root{--indigo:#4f46e5;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#f3f4f6;color:#111;padding:16px}
+    .card{background:#fff;border-radius:12px;padding:20px;max-width:900px;margin:0 auto;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    h1{font-size:20px;margin:0 0 12px}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+    input[type=text],input[type=number],textarea,input[type=file]{width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;margin-top:6px}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:768px){.grid-2{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:repeat(3,1fr)}}
+    button{background:var(--indigo);color:#fff;padding:12px 18px;border-radius:10px;border:0;font-weight:600;cursor:pointer;margin-top:14px}
+    .refs{border:1px solid #e5e7eb;padding:10px;border-radius:8px}
+    .muted{color:var(--muted);font-size:13px}
+    .success{color:green;margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Cadastro de Prestadores – Homecare (Preview)</h1>
+    <form id="form" autocomplete="off">
+      <label>Nome completo <input name="nome" required /></label>
+
+      <div class="grid grid-2">
+        <div>
+          <label>CPF <input id="cpf" name="cpf" placeholder="000.000.000-00" required /></label>
+        </div>
+        <div>
+          <label>Telefone <input id="telefone" name="telefone" placeholder="(00) 00000-0000" required /></label>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div>
+          <label>Idade <input name="idade" type="number" required /></label>
+        </div>
+        <div>
+          <label>Endereço <input name="endereco" required /></label>
+        </div>
+      </div>
+
+      <label>Experiência profissional <textarea name="experiencia" rows="3" required></textarea></label>
+      <label>Formação e cursos <textarea name="formacao" rows="2" required></textarea></label>
+
+      <label>Upload de foto (JPG/PNG)
+        <input id="foto" name="foto" type="file" accept="image/jpeg,image/png" />
+      </label>
+
+      <div class="grid grid-3">
+        <div class="refs">
+          <strong>Referência 1</strong>
+          <label>Nome <input name="ref1_nome" /></label>
+          <label>Telefone <input name="ref1_telefone" /></label>
+          <label>Contato emergência <input name="ref1_emergencia" /></label>
+        </div>
+        <div class="refs">
+          <strong>Referência 2</strong>
+          <label>Nome <input name="ref2_nome" /></label>
+          <label>Telefone <input name="ref2_telefone" /></label>
+          <label>Contato emergência <input name="ref2_emergencia" /></label>
+        </div>
+        <div class="refs">
+          <strong>Referência 3</strong>
+          <label>Nome <input name="ref3_nome" /></label>
+          <label>Telefone <input name="ref3_telefone" /></label>
+          <label>Contato emergência <input name="ref3_emergencia" /></label>
+        </div>
+      </div>
+
+      <div style="text-align:center"><button type="submit">Enviar cadastro</button></div>
+      <p id="status" class="muted"></p>
+    </form>
+    <p class="muted">Abra <a href="admin.html">Preview Admin</a> em outra aba para ver os cadastros.</p>
+  </div>
+
+  <script>
+    // helpers
+    function formatCPF(v){ const d = v.replace(/\D/g,'').slice(0,11); if(!d) return ''; return d.replace(/(\d{3})(\d{3})(\d{3})(\d{1})?/,'$1.$2.$3-$4').replace(/\.$/,'') }
+    function formatPhone(v){ const d=v.replace(/\D/g,'').slice(0,11); if(d.length<=2) return d; if(d.length<=6) return `(${d.slice(0,2)}) ${d.slice(2)}`; if(d.length<=10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`; return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}` }
+
+    const form = document.getElementById('form');
+    const status = document.getElementById('status');
+    const cpfInput = document.getElementById('cpf');
+    const telInput = document.getElementById('telefone');
+    const fotoInput = document.getElementById('foto');
+
+    cpfInput.addEventListener('input', e=> e.target.value = formatCPF(e.target.value));
+    telInput.addEventListener('input', e=> e.target.value = formatPhone(e.target.value));
+
+    function loadCadastros(){ try{return JSON.parse(localStorage.getItem('cadastros')||'[]')}catch(e){return[]} }
+    function saveCadastros(arr){ localStorage.setItem('cadastros', JSON.stringify(arr)) }
+
+    form.addEventListener('submit', async (ev)=>{
+      ev.preventDefault(); status.textContent=''; status.className='muted';
+      const fd = new FormData(form);
+      // required client-side
+      const req = ['nome','cpf','telefone','idade','endereco','experiencia','formacao'];
+      for(const k of req) if(!fd.get(k)) { status.textContent='Preencha todos os campos obrigatórios'; return }
+
+      const cpfDigits = String(fd.get('cpf')||'').replace(/\D/g,''); if(cpfDigits.length!==11){ status.textContent='CPF inválido'; return }
+      const telDigits = String(fd.get('telefone')||'').replace(/\D/g,''); if(telDigits.length<10){ status.textContent='Telefone inválido'; return }
+
+      // handle foto -> dataURL
+      const file = fotoInput.files && fotoInput.files[0];
+      let fotoData = '';
+      if(file){ if(!['image/jpeg','image/png'].includes(file.type)){ status.textContent='Apenas JPG/PNG aceitos'; return };
+        fotoData = await new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file) })
+      }
+
+      const obj = {};
+      fd.forEach((v,k)=> obj[k]=v);
+      obj.foto = fotoData;
+      obj.createdAt = new Date().toISOString();
+
+      const arr = loadCadastros(); arr.push(obj); saveCadastros(arr);
+      status.textContent='Cadastro realizado com sucesso! Obrigado!'; status.className='success';
+      form.reset();
+      // notify other tab
+      localStorage.setItem('cadastros_updated_at', Date.now());
+    })
+  </script>
+</body>
+</html>

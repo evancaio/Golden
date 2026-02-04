@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Cadastros (Preview)</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#f3f4f6;padding:16px}
+    .card{background:#fff;padding:18px;border-radius:12px;max-width:1100px;margin:0 auto;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #eef2f7;text-align:left;font-size:14px}
+    th{background:#f8fafc;color:#111}
+    img.thumb{max-width:80px;border-radius:6px}
+    .muted{color:#6b7280;font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Painel Admin — Cadastros (Preview)</h1>
+    <p class="muted">Esta é uma pré-visualização local que carrega cadastros do <code>localStorage</code>.</p>
+    <div style="overflow:auto;margin-top:12px">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>Telefone</th>
+            <th>Idade</th>
+            <th>Endereço</th>
+            <th>Experiência</th>
+            <th>Formação</th>
+            <th>Referências</th>
+            <th>Foto</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="muted">Abra <a href="index.html">Preview Form</a> para adicionar cadastros.</p>
+  </div>
+
+  <script>
+    function loadCadastros(){ try{return JSON.parse(localStorage.getItem('cadastros')||'[]')}catch(e){return[]} }
+    function render(){
+      const tbody = document.querySelector('#tbl tbody'); tbody.innerHTML='';
+      const data = loadCadastros();
+      if(!data.length){ tbody.innerHTML = '<tr><td colspan="10" class="muted">Nenhum cadastro encontrado.</td></tr>'; return }
+      data.forEach(r => {
+        const tr = document.createElement('tr');
+        const refs = [1,2,3].map(n=> (r[`ref${n}_nome`]||'-') + ' / ' + (r[`ref${n}_telefone`]||'-') + ' / ' + (r[`ref${n}_emergencia`]||'-')).join('<br/>');
+        tr.innerHTML = `
+          <td>${escapeHtml(r.nome||'')}</td>
+          <td>${escapeHtml(r.cpf||'')}</td>
+          <td>${escapeHtml(r.telefone||'')}</td>
+          <td>${escapeHtml(r.idade||'')}</td>
+          <td>${escapeHtml(r.endereco||'')}</td>
+          <td>${escapeHtml(r.experiencia||'')}</td>
+          <td>${escapeHtml(r.formacao||'')}</td>
+          <td>${refs}</td>
+          <td>${r.foto ? `<a href="${r.foto}" target="_blank"><img class="thumb" src="${r.foto}" alt="foto"/></a>` : '-'}</td>
+          <td>${new Date(r.createdAt||'').toLocaleString()||'-'}</td>
+        `;
+        tbody.appendChild(tr);
+      })
+    }
+
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]) }
+
+    window.addEventListener('storage', (e)=>{ if(e.key==='cadastros_updated_at') render() })
+    render();
+  </script>
+</body>
+</html>
