@@ -51,6 +51,39 @@ git init
 git add .
 git commit -m "chore: initial project cadastro-homecare"
 ```
+
+Deploy automático com Vercel
+1. Crie um repositório no GitHub e envie o código:
+
+```bash
+# substitua USERNAME e REPO
+git remote add origin git@github.com:USERNAME/REPO.git
+git branch -M main
+git push -u origin main
+```
+
+2. No Vercel, clique em "New Project" → importe do GitHub, selecione o repositório.
+
+3. Configure variáveis de ambiente (Dashboard Project → Settings → Environment Variables):
+- `NEXT_PUBLIC_BASE_URL` (opcional) — a URL pública do site
+- `UPLOAD_DIR` — por padrão `public/uploads`
+
+4. O arquivo `vercel.json` presente na raiz já configura o builder para Next.js. O Vercel fará deploy automático a cada push para a branch conectada.
+
+Observações importantes
+- O projeto salva imagens em `public/uploads` e registros em `data/cadastros.json`. O filesystem no Vercel é efêmero — arquivos escritos durante execução NÃO são persistidos entre deploys e instâncias. Para produção real, use um serviço de blob (S3, GCS) e adapte `app/api/cadastro/route.ts` para enviar o arquivo ao storage e salvar a URL.
+- Se preferir usar o `vercel` CLI para deploy manual:
+
+```bash
+npm i -g vercel
+vercel login
+vercel --prod
+```
+
+Se quiser, eu posso:
+- adaptar o endpoint para S3/GCS (incluir instruções e variáveis env), ou
+- criar um workflow de GitHub Actions que chama `vercel` CLI para deploy (opcional).
+
 # cadastro-homecare
 
 Projeto Next.js (App Router) para cadastro de prestadores Homecare — frontend, backend, upload de imagem e persistência simples.

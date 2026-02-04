@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "package.json", "use": "@vercel/next" }
+  ],
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ],
+  "env": {
+    "UPLOAD_DIR": "public/uploads"
+  },
+  "functions": {
+    "app/api/**.ts": { "memory": 1024, "maxDuration": 10 }
+  }
+}
